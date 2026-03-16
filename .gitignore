@@ -5,3 +5,8 @@ __pycache__/
 check_inbox.ps1
 git_init.ps1
 run.ps1
+gen_preview.ps1
+preview.html
+preview.ps1
+preview_gen.py
+
