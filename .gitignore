@@ -1,0 +1,7 @@
+config.py
+__pycache__/
+*.pyc
+*.pyo
+check_inbox.ps1
+git_init.ps1
+run.ps1
