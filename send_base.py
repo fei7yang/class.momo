@@ -59,7 +59,7 @@ def build_html(summary, date_str, time_str, alarm_minutes, desc):
               <p style="margin:0;font-size:13px;color:#7ecfff;
                         letter-spacing:2px;text-transform:uppercase;">CALENDAR UPDATE</p>
               <h1 style="margin:8px 0 0;font-size:24px;font-weight:700;
-                         color:#ffffff;letter-spacing:0.5px;">课程时间更新</h1>
+                         color:#ffffff;letter-spacing:0.5px;">📅 课程时间更新</h1>
             </td>
           </tr>
           <!-- Body -->
@@ -161,7 +161,7 @@ def send_calendar_event(
             inbox_id=config.INBOX_ID,
             to=to_addr,
             cc=cc_list if cc_list else None,
-            subject=f"课程时间更新：{summary}",
+            subject=f"📅 课程时间更新：{summary}",
             text=text,
             html=html,
             attachments=[{
