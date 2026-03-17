@@ -33,38 +33,35 @@
 
 ## 系统架构
 
-```
-+----------------------------------------------------------+
-|              Eric 操作端 (Windows)                       |
-|                                                          |
-|  courses/xx.py  ->  send_base.py  ->  AgentMail API      |
-|       ^                                                  |
-|   config.py (本地密钥 / 收件人配置)                      |
-+-------------------------+--------------------------------+
-                          |  REST API (需魔法，见下方说明)
-                          v
-               +----------------------+
-               |   AgentMail 服务端   |
-               |  inbox: class.momo   |
-               +----------+-----------+
-                          |  邮件 + .ics 附件
-                          v
-               +----------------------+
-               |   momo 的邮件客户端  |
-               |  Outlook / 系统邮件  |
-               +----------+-----------+
-                          |  接受日历邀请
-                          v
-               +----------------------+
-               |    momo 的日历       |
-               |  (自动添加 / 更新)   |
-               +----------------------+
+```mermaid
+flowchart TD
+    subgraph Eric["Eric 操作端 (Windows)"]
+        A["courses/xx.py"] --> B["send_base.py"]
+        C["config.py\n本地密钥 / 收件人配置"] -.->|读取配置| B
+    end
 
-后台支撑服务 (运行在 Windows 云服务器)：
-  +----------------------------------------------------------+
-  |  Radicale CalDAV  :5232  (SSL)  -- 日历数据存储服务      |
-  |  证书下载服务      :8099  (HTTP) -- 向设备推送 SSL 证书  |
-  +----------------------------------------------------------+
+    B -->|REST API\n需魔法，见下方说明| D
+
+    subgraph AgentMail["AgentMail 服务端"]
+        D["inbox: class.momo"]
+    end
+
+    D -->|邮件 + .ics 附件| E
+
+    subgraph Client["momo 的邮件客户端"]
+        E["Outlook / 系统邮件"]
+    end
+
+    E -->|接受日历邀请| F
+
+    subgraph Calendar["momo 的日历"]
+        F["自动添加 / 更新课程事件"]
+    end
+
+    subgraph Backend["后台支撑服务 (Windows 云服务器)"]
+        G["Radicale CalDAV :5232 (SSL)\n日历数据存储"]
+        H["证书下载服务 :8099 (HTTP)\n向设备推送 SSL 证书"]
+    end
 ```
 
 **关键机制 — UID + SEQUENCE**
@@ -188,24 +185,23 @@ pwsh -File C:\Eric_Workspace\class.momo\start_services.ps1
 
 **脚本工作流程：**
 
-```
-+------------------------------------------------------+
-|  start_services.ps1                                  |
-|                                                      |
-|  [1] 检测旧进程                                      |
-|      PID 文件匹配  ->  按端口兜底扫描 (netstat -ano) |
-|      +-- 找到则 Stop-Process -Force                  |
-|                                                      |
-|  [2] 启动新进程 (后台静默，日志重定向到文件)         |
-|      Radicale : python -m radicale --config ...      |
-|      证书服务  : python serve_cert.py                |
-|                                                      |
-|  [3] 健康检查 (TCP 端口探测)                         |
-|      Test-NetConnection localhost -Port 5232/8099    |
-|                                                      |
-|  [4] 彩色状态汇总                                    |
-|      [OK] 绿色    [!!] 红色    [--] 黄色提示         |
-+------------------------------------------------------+
+```mermaid
+flowchart TD
+    A([start_services.ps1 启动]) --> B
+
+    B["① 检测旧进程\nPID 文件匹配 → 按端口兜底扫描\nnetstat -ano"] --> C{"找到残留进程?"}
+    C -->|是| D["Stop-Process -Force"]
+    C -->|否| E
+    D --> E
+
+    E["② 启动新进程 (后台静默)\nRadicale: python -m radicale --config ...\n证书服务: python serve_cert.py"] --> F
+
+    F["③ 健康检查 (TCP 端口探测)\nTest-NetConnection localhost -Port 5232\nTest-NetConnection localhost -Port 8099"] --> G
+
+    G["④ 彩色状态汇总"]
+    G --> H["✅ OK — 绿色"]
+    G --> I["❌ !! — 红色 (启动失败)"]
+    G --> J["⚠️ -- — 黄色 (已终止旧进程)"]
 ```
 
 **预期输出：**
